@@ -1,0 +1,11 @@
+[phases.setup]
+nixPkgs = ["nodejs", "npm", "rustc", "cargo", "postgresql"]
+
+[phases.install]
+cmds = ["cd frontend && npm ci", "cd backend && cargo build --release"]
+
+[phases.build]
+cmds = ["cd frontend && npm run build", "cd backend && cargo build --release"]
+
+[start]
+cmd = "cd backend && cargo run --release"
