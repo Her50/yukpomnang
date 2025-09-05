@@ -1,25 +1,32 @@
-FROM rust:1.75-slim as builder
+FROM rust:1.85-slim as builder
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y pkg-config libssl-dev libpq-dev build-essential && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y pkg-config libssl-dev libpq-dev build-essential postgresql-client && rm -rf /var/lib/apt/lists/*
 
 COPY backend/Cargo.toml backend/Cargo.lock ./backend/
 COPY backend/src ./backend/src
 COPY backend/migrations ./backend/migrations
+COPY railway-migrate.sh ./railway-migrate.sh
 
 WORKDIR /app/backend
+
+ENV SQLX_OFFLINE=true
 
 RUN cargo build --release
 
 FROM debian:bookworm-slim
 
-RUN apt-get update && apt-get install -y libssl3 libpq5 ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y libssl3 libpq5 ca-certificates postgresql-client && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 COPY --from=builder /app/backend/target/release/yukpomnang_backend /app/
-COPY backend/migrations /app/migrations
+COPY --from=builder /app/backend/migrations /app/migrations
+COPY --from=builder /app/railway-migrate.sh /app/
+
+RUN chmod +x /app/yukpomnang_backend
+RUN chmod +x /app/railway-migrate.sh
 
 EXPOSE 8000
 
