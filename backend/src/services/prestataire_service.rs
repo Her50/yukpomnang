@@ -25,9 +25,9 @@ pub async fn get_prestataire_info(
         SELECT 
             id,
             CASE 
-                WHEN TRIM(COALESCE(nom, '') || ' ' || COALESCE(prenom, '')) = '' 
+                WHEN COALESCE(nom_complet, split_part(email, '@', 1)) IS NULL 
                 THEN split_part(email, '@', 1)
-                ELSE TRIM(COALESCE(nom, '') || ' ' || COALESCE(prenom, ''))
+                ELSE TRIM(COALESCE(nom_complet, split_part(email, '@', 1)))
             END as nom_complet,
             email,
             is_provider,
@@ -61,9 +61,9 @@ pub async fn get_prestataires_info_batch(
         SELECT 
             id,
             CASE 
-                WHEN TRIM(COALESCE(nom, '') || ' ' || COALESCE(prenom, '')) = '' 
+                WHEN COALESCE(nom_complet, split_part(email, '@', 1)) IS NULL 
                 THEN split_part(email, '@', 1)
-                ELSE TRIM(COALESCE(nom, '') || ' ' || COALESCE(prenom, ''))
+                ELSE TRIM(COALESCE(nom_complet, split_part(email, '@', 1)))
             END as nom_complet,
             email,
             is_provider,
@@ -93,9 +93,9 @@ pub async fn get_all_prestataires(
         SELECT 
             id,
             CASE 
-                WHEN TRIM(COALESCE(nom, '') || ' ' || COALESCE(prenom, '')) = '' 
+                WHEN COALESCE(nom_complet, split_part(email, '@', 1)) IS NULL 
                 THEN split_part(email, '@', 1)
-                ELSE TRIM(COALESCE(nom, '') || ' ' || COALESCE(prenom, ''))
+                ELSE TRIM(COALESCE(nom_complet, split_part(email, '@', 1)))
             END as nom_complet,
             email,
             is_provider,
@@ -106,9 +106,9 @@ pub async fn get_all_prestataires(
         FROM users 
         WHERE is_provider = true
         ORDER BY CASE 
-                WHEN TRIM(COALESCE(nom, '') || ' ' || COALESCE(prenom, '')) = '' 
+                WHEN COALESCE(nom_complet, split_part(email, '@', 1)) IS NULL 
                 THEN split_part(email, '@', 1)
-                ELSE TRIM(COALESCE(nom, '') || ' ' || COALESCE(prenom, ''))
+                ELSE TRIM(COALESCE(nom_complet, split_part(email, '@', 1)))
             END, created_at
         "#
     )
