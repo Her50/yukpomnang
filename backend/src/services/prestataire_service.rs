@@ -1,4 +1,4 @@
-﻿use crate::core::types::AppResult;
+use crate::core::types::AppResult;
 use sqlx::PgPool;
 use serde::{Deserialize, Serialize};
 
@@ -14,7 +14,7 @@ pub struct PrestataireInfo {
     pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
-/// R�cup�re les informations d'un prestataire par son ID
+/// Récupère les informations d'un prestataire par son ID
 pub async fn get_prestataire_info(
     pool: &PgPool,
     user_id: i32,
@@ -24,7 +24,11 @@ pub async fn get_prestataire_info(
         r#"
         SELECT 
             id,
-            COALESCE(nom_complet, split_part(email, '@', 1)) as nom_complet,
+            CASE 
+                WHEN TRIM(COALESCE(nom, '') || ' ' || COALESCE(prenom, '')) = '' 
+                THEN split_part(email, '@', 1)
+                ELSE TRIM(COALESCE(nom, '') || ' ' || COALESCE(prenom, ''))
+            END as nom_complet,
             email,
             is_provider,
             gps,
@@ -42,7 +46,7 @@ pub async fn get_prestataire_info(
     Ok(result)
 }
 
-/// R�cup�re les informations de plusieurs prestataires par leurs IDs
+/// Récupère les informations de plusieurs prestataires par leurs IDs
 pub async fn get_prestataires_info_batch(
     pool: &PgPool,
     user_ids: &[i32],
@@ -56,7 +60,11 @@ pub async fn get_prestataires_info_batch(
         r#"
         SELECT 
             id,
-            COALESCE(nom_complet, split_part(email, '@', 1)) as nom_complet,
+            CASE 
+                WHEN TRIM(COALESCE(nom, '') || ' ' || COALESCE(prenom, '')) = '' 
+                THEN split_part(email, '@', 1)
+                ELSE TRIM(COALESCE(nom, '') || ' ' || COALESCE(prenom, ''))
+            END as nom_complet,
             email,
             is_provider,
             gps,
@@ -75,7 +83,7 @@ pub async fn get_prestataires_info_batch(
     Ok(result)
 }
 
-/// R�cup�re tous les prestataires avec leurs informations
+/// Récupère tous les prestataires avec leurs informations
 pub async fn get_all_prestataires(
     pool: &PgPool,
 ) -> AppResult<Vec<PrestataireInfo>> {
@@ -84,7 +92,11 @@ pub async fn get_all_prestataires(
         r#"
         SELECT 
             id,
-            COALESCE(nom_complet, split_part(email, '@', 1)) as nom_complet,
+            CASE 
+                WHEN TRIM(COALESCE(nom, '') || ' ' || COALESCE(prenom, '')) = '' 
+                THEN split_part(email, '@', 1)
+                ELSE TRIM(COALESCE(nom, '') || ' ' || COALESCE(prenom, ''))
+            END as nom_complet,
             email,
             is_provider,
             gps,
@@ -93,7 +105,11 @@ pub async fn get_all_prestataires(
             created_at
         FROM users 
         WHERE is_provider = true
-        ORDER BY COALESCE(nom_complet, split_part(email, '@', 1)), created_at
+        ORDER BY CASE 
+                WHEN TRIM(COALESCE(nom, '') || ' ' || COALESCE(prenom, '')) = '' 
+                THEN split_part(email, '@', 1)
+                ELSE TRIM(COALESCE(nom, '') || ' ' || COALESCE(prenom, ''))
+            END, created_at
         "#
     )
     .fetch_all(pool)
@@ -102,7 +118,7 @@ pub async fn get_all_prestataires(
     Ok(result)
 }
 
-/// Met � jour le nom d'un utilisateur
+/// Met à jour le nom d'un utilisateur
 pub async fn update_user_name(
     pool: &PgPool,
     user_id: i32,
@@ -120,10 +136,14 @@ pub async fn update_user_name(
         r#"
         UPDATE users 
         SET 
-            nom_complet = COALESCE($1, nom_complet),
+            nom = COALESCE($1, nom),
+            prenom = COALESCE($2, prenom),
+            nom_complet = COALESCE($3, nom_complet),
             updated_at = NOW()
-        WHERE id = $2
+        WHERE id = $4
         "#,
+        nom,
+        prenom,
         nom_complet,
         user_id
     )
@@ -131,8 +151,4 @@ pub async fn update_user_name(
     .await?;
 
     Ok(())
-}
-
-
-
-
+} 
