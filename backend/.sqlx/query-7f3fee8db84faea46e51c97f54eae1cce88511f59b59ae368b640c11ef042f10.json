@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "UPDATE users SET tokens_balance = tokens_balance + $1 WHERE id = $2 RETURNING tokens_balance",
+  "query": "UPDATE users SET tokens_balance = tokens_balance - $1 WHERE id = $2 AND tokens_balance >= $1 RETURNING tokens_balance",
   "describe": {
     "columns": [
       {
@@ -19,5 +19,5 @@
       false
     ]
   },
-  "hash": "c34ac018dbabb3266f8790d9c0a03588a2bbcf883acf38bef7454ec2df1d428b"
+  "hash": "7f3fee8db84faea46e51c97f54eae1cce88511f59b59ae368b640c11ef042f10"
 }

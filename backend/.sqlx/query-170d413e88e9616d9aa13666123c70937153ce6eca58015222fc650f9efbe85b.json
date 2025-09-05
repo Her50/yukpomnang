@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT id, name, tokens, price FROM token_packs ORDER BY price ASC",
+  "query": "SELECT id, email, created_at, gps_consent FROM users WHERE id = $1",
   "describe": {
     "columns": [
       {
@@ -10,29 +10,31 @@
       },
       {
         "ordinal": 1,
-        "name": "name",
+        "name": "email",
         "type_info": "Text"
       },
       {
         "ordinal": 2,
-        "name": "tokens",
-        "type_info": "Int4"
+        "name": "created_at",
+        "type_info": "Timestamptz"
       },
       {
         "ordinal": 3,
-        "name": "price",
-        "type_info": "Int4"
+        "name": "gps_consent",
+        "type_info": "Bool"
       }
     ],
     "parameters": {
-      "Left": []
+      "Left": [
+        "Int4"
+      ]
     },
     "nullable": [
       false,
       false,
       false,
-      false
+      true
     ]
   },
-  "hash": "2a529ae11a2361f64f9886a0265e19a4bde4cfd58dafd8eb436f399f13607e40"
+  "hash": "170d413e88e9616d9aa13666123c70937153ce6eca58015222fc650f9efbe85b"
 }

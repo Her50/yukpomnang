@@ -1,0 +1,46 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT s.id, s.user_id, s.data, s.is_active, s.created_at\n            FROM services s\n            WHERE s.is_active = true\n            AND (\n                s.data::text ILIKE $1\n                OR s.data->>'titre_service' ILIKE $1\n                OR s.data->>'description_service' ILIKE $1\n                OR s.data->>'category' ILIKE $1\n                OR s.category ILIKE $1\n            )\n            ORDER BY s.created_at DESC\n            LIMIT 15\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "user_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "data",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 3,
+        "name": "is_active",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 4,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "db5bea9835e34709476055f443e82bc6561f612769ac14e52d7d9672c742b935"
+}
