@@ -3,9 +3,29 @@ services:
     name: yukpomnang-backend
     env: rust
     buildCommand: |
+      echo "?? Démarrage des migrations avant le build..."
+      sleep 5
+      if [ -z "" ]; then
+        echo "? DATABASE_URL n'est pas définie"
+        exit 1
+      fi
+      echo "?? Application des migrations de colonnes nom/prenom..."
+      psql "" -c "
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS nom VARCHAR(255);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS prenom VARCHAR(255);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS nom_complet VARCHAR(255);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS photo_profil VARCHAR(500);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url VARCHAR(500);
+      UPDATE users SET nom_complet = COALESCE(nom_complet, split_part(email, '@', 1)) WHERE nom_complet IS NULL;
+      UPDATE users SET avatar_url = COALESCE(avatar_url, 'https://ui-avatars.com/api/?name=' || COALESCE(nom_complet, split_part(email, '@', 1)) || '&background=random&color=fff&size=200') WHERE avatar_url IS NULL;
+      CREATE INDEX IF NOT EXISTS idx_users_nom_complet ON users(nom_complet);
+      CREATE INDEX IF NOT EXISTS idx_users_photo_profil ON users(photo_profil);
+      CREATE INDEX IF NOT EXISTS idx_users_avatar_url ON users(avatar_url);
+      "
+      echo "? Migrations appliquées, démarrage de la compilation..."
       cd backend
       cargo build --release
-    startCommand: ./render-migrate.sh
+    startCommand: cd backend && cargo run --release
     envVars:
       - key: DATABASE_URL
         sync: false
