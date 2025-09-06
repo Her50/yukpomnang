@@ -1,4 +1,4 @@
-NE use crate::core::types::AppResult;
+use crate::core::types::AppResult;
 use sqlx::PgPool;
 use serde::{Deserialize, Serialize};
 
