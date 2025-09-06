@@ -1,0 +1,37 @@
+﻿services:
+  - type: web
+    name: yukpomnang-backend
+    env: rust
+    rootDir: backend
+    buildCommand: |
+      echo "Démarrage du processus de build avec migrations..."
+      if [ -z "$DATABASE_URL" ]; then echo "ERREUR: DATABASE_URL n est pas définie"; exit 1; fi
+      echo "Application des migrations de base de données..."
+      if ! command -v sqlx &> /dev/null; then echo "Installation de SQLx CLI..."; cargo install sqlx-cli --no-default-features --features rustls,postgres; fi
+      echo "Nettoyage complet de l état des migrations..."
+      psql "$DATABASE_URL" -c "DROP TABLE IF EXISTS _sqlx_migrations CASCADE;" || echo "Table _sqlx_migrations n existe pas"
+      psql "$DATABASE_URL" -c "DROP SCHEMA IF EXISTS _sqlx_migrations CASCADE;" || echo "Schema _sqlx_migrations n existe pas"
+      echo "Suppression de toutes les tables existantes pour repartir à zéro..."
+      psql "$DATABASE_URL" -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public; GRANT ALL ON SCHEMA public TO postgres; GRANT ALL ON SCHEMA public TO public;" || echo "Erreur lors de la réinitialisation du schema"
+      echo "Suppression du cache SQLx local..."
+      rm -rf .sqlx/ || echo "Cache SQLx n existe pas"
+      echo "Suppression de tous les fichiers de migration temporaires..."
+      rm -rf migrations/ || echo "Dossier migrations n existe pas"
+      echo "Création d un nouveau dossier migrations..."
+      mkdir -p migrations/
+      echo "Création d une migration initiale propre..."
+      echo "-- Migration initiale" > migrations/00000000000000_initial.sql
+      echo "CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, email VARCHAR(255) UNIQUE NOT NULL, created_at TIMESTAMP DEFAULT NOW());" >> migrations/00000000000000_initial.sql
+      echo "Application des migrations SQLx avec force..."
+      sqlx migrate run --ignore-missing
+      echo "Compilation du backend Rust..."
+      cargo build --release
+      echo "Build terminé avec succès!"
+    startCommand: cargo run --release
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: RUST_LOG
+        value: info
+    healthCheckPath: /health
+    plan: starter

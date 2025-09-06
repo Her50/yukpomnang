@@ -1,0 +1,34 @@
+﻿services:
+  - type: web
+    name: yukpomnang-backend
+    env: rust
+    rootDir: backend
+    buildCommand: |
+      echo "Démarrage du processus de build avec migrations..."
+      if [ -z "$DATABASE_URL" ]; then echo "ERREUR: DATABASE_URL n est pas définie"; exit 1; fi
+      echo "Application des migrations de base de données..."
+      if ! command -v sqlx &> /dev/null; then echo "Installation de SQLx CLI..."; cargo install sqlx-cli --no-default-features --features rustls,postgres; fi
+      echo "Nettoyage complet de l état des migrations..."
+      psql "$DATABASE_URL" -c "DROP TABLE IF EXISTS _sqlx_migrations CASCADE;" || echo "Table _sqlx_migrations n existe pas"
+      psql "$DATABASE_URL" -c "DROP SCHEMA IF EXISTS _sqlx_migrations CASCADE;" || echo "Schema _sqlx_migrations n existe pas"
+      echo "Suppression de toutes les tables existantes pour repartir à zéro..."
+      psql "$DATABASE_URL" -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public; GRANT ALL ON SCHEMA public TO postgres; GRANT ALL ON SCHEMA public TO public;" || echo "Erreur lors de la réinitialisation du schema"
+      echo "Suppression du cache SQLx local..."
+      rm -rf .sqlx/ || echo "Cache SQLx n existe pas"
+      echo "Création d une nouvelle base de données propre..."
+      psql "$DATABASE_URL" -c "CREATE DATABASE temp_db;" || echo "Base temporaire existe déjà"
+      psql "$DATABASE_URL" -c "DROP DATABASE IF EXISTS $(echo $DATABASE_URL | sed 's/.*\/\([^?]*\).*/\1/');" || echo "Suppression de l ancienne base"
+      psql "$DATABASE_URL" -c "CREATE DATABASE $(echo $DATABASE_URL | sed 's/.*\/\([^?]*\).*/\1/');" || echo "Création de la nouvelle base"
+      echo "Application des migrations SQLx avec force..."
+      sqlx migrate run --ignore-missing
+      echo "Compilation du backend Rust..."
+      cargo build --release
+      echo "Build terminé avec succès!"
+    startCommand: cargo run --release
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: RUST_LOG
+        value: info
+    healthCheckPath: /health
+    plan: starter
