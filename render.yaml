@@ -15,10 +15,13 @@
       psql "$DATABASE_URL" -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public; GRANT ALL ON SCHEMA public TO postgres; GRANT ALL ON SCHEMA public TO public;" || echo "Erreur lors de la réinitialisation du schema"
       echo "Suppression du cache SQLx local..."
       rm -rf .sqlx/ || echo "Cache SQLx n existe pas"
-      echo "Création d une nouvelle base de données propre..."
-      psql "$DATABASE_URL" -c "CREATE DATABASE temp_db;" || echo "Base temporaire existe déjà"
-      psql "$DATABASE_URL" -c "DROP DATABASE IF EXISTS $(echo $DATABASE_URL | sed 's/.*\/\([^?]*\).*/\1/');" || echo "Suppression de l ancienne base"
-      psql "$DATABASE_URL" -c "CREATE DATABASE $(echo $DATABASE_URL | sed 's/.*\/\([^?]*\).*/\1/');" || echo "Création de la nouvelle base"
+      echo "Suppression de tous les fichiers de migration temporaires..."
+      rm -rf migrations/ || echo "Dossier migrations n existe pas"
+      echo "Création d un nouveau dossier migrations..."
+      mkdir -p migrations/
+      echo "Création d une migration initiale propre..."
+      echo "-- Migration initiale" > migrations/00000000000000_initial.sql
+      echo "CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, email VARCHAR(255) UNIQUE NOT NULL, created_at TIMESTAMP DEFAULT NOW());" >> migrations/00000000000000_initial.sql
       echo "Application des migrations SQLx avec force..."
       sqlx migrate run --ignore-missing
       echo "Compilation du backend Rust..."
